@@ -2,5 +2,6 @@
 *.cmp
 *.tst
 *.out
+*.hack
 tools/
 .vscode/
