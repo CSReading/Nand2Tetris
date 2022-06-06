@@ -17,4 +17,48 @@ CHIP DMux8Way {
 
     PARTS:
     // Put your code here:
+
+    Not (in=sel[0], out=NotSel0);
+    Not (in=sel[1], out=NotSel1);
+    Not (in=sel[2], out=NotSel2);
+
+    And (a=in, b=NotSel0, out=tempA0);
+    And (a=tempA0, b=NotSel1, out=tempA01);
+    And (a=tempA01, b=NotSel2, out=a);
+
+    And (a=in, b=sel[0], out=tempB0);
+    And (a=tempB0, b=NotSel1, out=tempB01);
+    And (a=tempB01, b=NotSel2, out=b);
+
+    And (a=in, b=NotSel0, out=tempC0);
+    And (a=tempC0, b=sel[1], out=tempC01);
+    And (a=tempC01, b=NotSel2, out=c);
+
+    And (a=in, b=sel[0], out=tempD0);
+    And (a=tempD0, b=sel[1], out=tempD01);
+    And (a=tempD01, b=NotSel2, out=d);
+
+    And (a=in, b=NotSel0, out=tempE0);
+    And (a=tempE0, b=NotSel1, out=tempE01);
+    And (a=tempE01, b=sel[2], out=e);
+
+    And (a=in, b=sel[0], out=tempF0);
+    And (a=tempF0, b=NotSel1, out=tempF01);
+    And (a=tempF01, b=sel[2], out=f);
+
+    And (a=in, b=NotSel0, out=tempG0);
+    And (a=tempG0, b=sel[1], out=tempG01);
+    And (a=tempG01, b=sel[2], out=g);
+
+    And (a=in, b=sel[0], out=tempH0);
+    And (a=tempH0, b=sel[1], out=tempH01);
+    And (a=tempH01, b=sel[2], out=h);
 }
+
+/**
+より簡潔な例
+
+DMux (in=in, sel=sel[2], a=x, b=y);
+DMux4Way (in=x, sel=sel[0..1], a=a, b=b, c=c, d=d);
+DMux4Way (in=y, sel=sel[0..1], a=e, b=f, c=g, d=h);
+*/

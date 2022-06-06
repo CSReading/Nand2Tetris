@@ -14,4 +14,23 @@ CHIP Xor {
 
     PARTS:
     // Put your code here:
+
+    Not (in=a, out=NotA);
+    Not (in=b, out=NotB);
+    And (a=a, b=NotB, out=aNb);
+    And (a=NotA, b=b, out=Nab);
+    Or (a=aNb, b=Nab, out=out);
 }
+
+/**
+メモ
+a Xor b = (a And Not b) Or (Not a And b)
+*/
+
+/**
+より簡潔な例
+
+Nand (a=a, b=b, out=w1);
+Or (a=a, b=b, out=w2);
+And (a=w1, b=w2, out=out);
+*/

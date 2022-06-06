@@ -15,4 +15,13 @@ CHIP And {
 
     PARTS:
     // Put your code here:
+
+    Nand (a=a, b=b, out=NandA);
+    Nand (a=a, b=b, out=NandB);
+    Nand (a=NandA, b=NandB, out=out);
 }
+
+/**
+メモ
+a And B = (a Nand b) Nand (a Nand b)
+*/

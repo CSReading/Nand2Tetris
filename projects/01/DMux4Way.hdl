@@ -17,4 +17,32 @@ CHIP DMux4Way {
 
     PARTS:
     // Put your code here:
+
+    Not (in=sel[0], out=NotSel0);
+    Not (in=sel[1], out=NotSel1);
+
+    And (a=in, b=NotSel0, out=tempA);
+    And (a=tempA, b=NotSel1, out=a);
+    And (a=in, b=sel[0], out=tempB);
+    And (a=tempB, b=NotSel1, out=b);
+    And (a=in, b=NotSel0, out=tempC);
+    And (a=tempC, b=sel[1], out=c);
+    And (a=in, b=sel[0], out=tempD);
+    And (a=tempD, b=sel[1], out=d);
 }
+
+/**
+メモ
+a = in And Not(sel[0]) And Not(sel[1])
+b = in And sel[0] And Not(sel[1])
+c = in And Not(sel[0]) And sel[1]
+d = in And sel[0] And sel[1]
+*/
+
+/**
+より簡潔な例
+
+DMux (in=in, sel=sel[1], a=x, b=y);
+DMux (in=x, sel=sel[0], a=a, b=b);
+DMux (in=y, sel=sel[0], a=c, b=d);
+*/

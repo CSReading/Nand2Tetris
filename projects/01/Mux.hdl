@@ -15,4 +15,25 @@ CHIP Mux {
 
     PARTS:
     // Put your code here:
+
+    Not (in=a, out=NotA);
+    Not (in=b, out=NotB);
+    Not (in=sel, out=NotSel);
+    And (a=a, b=b, out=ab);
+    And (a=NotA, b=b, out=Nab);
+    And (a=a, b=NotB, out=aNb);
+    Or (a=Nab, b=ab, out=temp1);
+    Or (a=aNb, b=ab, out=temp2);
+    And (a=temp1, b=sel, out=temp3);
+    And (a=temp2, b=NotSel, out=temp4);
+    Or (a=temp3, b=temp4, out=out);
 }
+
+/**
+より簡潔な例
+
+Not (in=sel, out=notsel);
+And (a=b, b=sel, out=x);
+And (a=a, b=notsel, out=y);
+Xor (a=x, b=y, out=out);
+*/
