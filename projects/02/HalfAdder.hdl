@@ -14,4 +14,12 @@ CHIP HalfAdder {
 
     PARTS:
     // Put you code here:
+
+    And(a=a, b=b, out=carry);
+    Xor(a=a, b=b, out=sum);
 }
+
+/**
+    メモ：
+    sumはXOR、carryはAndと一致する
+*/

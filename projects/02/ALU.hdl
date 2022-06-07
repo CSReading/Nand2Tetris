@@ -42,5 +42,32 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    // Put you code here:
+
+    Mux16(a=x, b[0..15]=false, sel=zx, out=x1);
+    Not16(in=x1, out=notx1);
+    Mux16(a=x1, b=notx1, sel=nx, out=x2);
+
+    Mux16(a=y, b[0..15]=false, sel=zy, out=y1);
+    Not16(in=y1, out=noty1);
+    Mux16(a=y1, b=noty1, sel=ny, out=y2);
+
+    Add16(a=x2, b=y2, out=outAdd);
+    And16(a=x2, b=y2, out=outAnd);
+    Mux16(a=outAnd, b=outAdd, sel=f, out=tmpout);
+
+    Not16(in=tmpout, out=notout);
+    Mux16(a=tmpout, b=notout, sel=no, out=out, out[0..7]=outfirst, out[8..15]=outsecond, out[15]=outlast);
+
+    Or8Way(in=outfirst, out=orfirst);
+    Or8Way(in=outsecond, out=orsecond);
+    Or(a=orfirst, b=orsecond, out=notzr);
+    Not(in=notzr, out=zr);
+
+    Mux(a=false, b=true, sel=outlast, out=ng);
 }
+
+/**
+    メモ：
+    ifの条件分岐にはMuxを使う
+*/

@@ -14,4 +14,12 @@ CHIP Inc16 {
 
     PARTS:
    // Put you code here:
+
+   Add16(a=in, b[0]=true, b[1..15]=false, out=out);
 }
+
+/**
+    メモ：
+    trueとfalseを使って"0000000000000001"をつくる
+    教科書Appendix A.5参照
+*/

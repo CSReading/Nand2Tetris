@@ -14,4 +14,13 @@ CHIP FullAdder {
 
     PARTS:
     // Put you code here:
+
+    HalfAdder(a=a, b=b, sum=sumAB, carry=carryAB);
+    HalfAdder(a=c, b=sumAB, sum=sum, carry=carryC);
+    Or(a=carryAB, b=carryC, out=carry);
 }
+
+/**
+    メモ：
+    筆算みたいなイメージで１つずつ加算し、最後にcarry同士を足し合わせる
+*/
