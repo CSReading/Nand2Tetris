@@ -17,4 +17,15 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+
+    Inc16(in=prevout, out=increment);
+    Mux16(a=prevout, b=increment, sel=inc, out=out1);
+    Mux16(a=out1, b=in, sel=load, out=out2);
+    Mux16(a=out2, b[0..15]=false, sel=reset, out=out3);
+    Register(in=out3, load=true, out=out, out=prevout);
 }
+
+/**
+    メモ：
+    Register（というよりDFF）を導入することで時間の概念を持ち込める
+*/
