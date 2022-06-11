@@ -30,3 +30,9 @@ CHIP RAM8 {
 
     Mux8Way16(a=res0, b=res1, c=res2, d=res3, e=res4, f=res5, g=res6, h=res7, sel=address, out=out);
 }
+
+/**
+    メモ：
+    教科書のt-1, t期というのは3+, 4期に相当する
+    3+期はtickしたあとの状態を表す
+*/
