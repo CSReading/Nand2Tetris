@@ -1,0 +1,13 @@
+CHIP ALUStat {
+    IN
+        in[16];
+    OUT
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
+    PARTS:
+        Or8Way(in=in[0..7], out=zrw1);
+        Or8Way(in=in[8..15], out=zrw2);
+        Or(a=zrw1, b=zrw2, out=zrw3);
+        Not(in=zrw3, out=zr);
+        And(a=in[15], b=true, out=ng);
+}

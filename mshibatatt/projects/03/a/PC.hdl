@@ -16,5 +16,17 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    Or(a=reset, b=load, out=sel1w);
+    Not(in=sel1w, out=sel1);
+
+    Not(in=reset, out=nreset);
+    Not(in=inc, out=ninc);
+    Or(a=load, b=ninc, out=sel0w);
+    And(a=sel0w, b=nreset, out=sel0);
+
+    And16(a=cout, b=false, out=resetout);
+    Add16(a=cout, b[0]=true, b[1..15]=false, out=incout);
+    Mux4Way16(a=resetout, b=in, c=incout, d=cout, sel[1]=sel1, sel[0]=sel0, out=cin);
+    DFF16(in=cin, out=cout);
+    And16(a=cout, b=true, out=out);
 }
