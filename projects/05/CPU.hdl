@@ -40,4 +40,38 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+
+    // C命令のときに新しい命令を使用する
+    Mux16(a=instruction, b=prevALUtoMux, sel=instruction[15], out=outMux1);
+
+    // A命令、もしくはC命令でAレジスタへの書き込み司令があったときにAレジスタに書き込みを行う
+    Not(in=instruction[15], out=isA);
+    Or(a=isA, b=instruction[5], out=writeA);
+    ARegister(in=outMux1, load=writeA, out=outAtoMux, out=outAtoPC, out[0..14]=addressM);
+
+    // C命令かつMレジスタへの書き込み司令があったときにCレジスタに書き込みを行う
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // aビットによってAレジスタの値かメモリ入力かどちらをしようするか決める
+    Mux16(a=outAtoMux, b=inM, sel=instruction[12], out=outMuxtoALU);
+
+    // ALUの計算
+    ALU(x=outD, y=outMuxtoALU, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=outM, out=prevALUtoD, out=prevALUtoMux, zr=outzr, ng=outng);
+
+    // C命令かつDレジスタへの書き込みが司令があったときにDレジスタに書き込みを行う
+    And(a=instruction[15], b=instruction[4], out=writeD);
+    DRegister(in=prevALUtoD, load=writeD, out=outD);
+
+    // ジャンプするかの判定
+    And(a=outzr, b=instruction[1], out=tmp1);
+    And(a=outng, b=instruction[2], out=tmp2);
+    Or(a=outzr, b=outng, out=tmp3);
+    Not(in=tmp3, out=tmp4);
+    And(a=tmp4, b=instruction[0], out=tmp5);
+    Or(a=tmp1, b=tmp2, out=tmp6);
+    Or(a=tmp5, b=tmp6, out=tmp7);
+    And(a=tmp7, b=instruction[15], out=jump);
+
+    // ジャンプするならジャンプ、しないならインクリメント、リセット司令があればリセット
+    PC(in=outAtoPC, load=jump, inc=true, reset=reset, out[0..14]=pc);
 }
