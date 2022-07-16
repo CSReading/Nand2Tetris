@@ -5,3 +5,7 @@
 *.hack
 tools/
 .vscode/
+
+
+# Julia
+Manifest.toml
