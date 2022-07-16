@@ -71,9 +71,8 @@ impl Command<'_> {
         if command_type == CommandType::ACOMMAND {
             &self.current_command[1..]
         } else {
-            let mut symbol: String = self.current_command.to_string();
-            symbol.pop();
-            &self.current_command[1..]
+            let symbol: String = self.current_command.to_string();
+            &self.current_command[1..symbol.len()-1]
         } 
     }
 

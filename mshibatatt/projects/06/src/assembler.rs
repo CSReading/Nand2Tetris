@@ -27,10 +27,9 @@ fn main() {
         let command_type: parser::CommandType = command.command_type();
         match command_type {
             parser::CommandType::ACOMMAND => address_number += 1,
-            parser::CommandType::CCOMMAND => (),
+            parser::CommandType::CCOMMAND => address_number += 1,
             parser::CommandType::LCOMMAND => {
                 let symbol = command.symbol().to_string();
-                address_number += 1;
                 symbol_table.add_entry(&symbol, address_number)
             },
         };
