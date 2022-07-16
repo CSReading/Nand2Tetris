@@ -14,7 +14,7 @@
 // Put your code here.
 (INFINITE_LOOP)
     @i
-    M=1             // M[i] <- D
+    M=1             // M[i] <- 1
     @SCREEN         // set screen starting memory address in A register
     D=A
     @loc
