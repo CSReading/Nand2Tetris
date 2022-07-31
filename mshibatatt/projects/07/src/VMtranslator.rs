@@ -11,10 +11,13 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
     let outfilename;
+    // let mut basefilename;
     if filename.ends_with(".vm") {
         outfilename = filename.trim_end_matches(".vm").to_owned() + ".asm";
+        // basefilename = filename.trim_end_matches(".vm").to_owned();
     } else {
         outfilename = filename.to_owned() + ".asm";
+        // basefilename = filename.to_owned();
     }
 
     
@@ -39,7 +42,7 @@ fn main() {
     }
     
     let mut writer = codewriter::init(&outfilename);
-    
+    // writer.set_file_name(&basefilename);
     vmfiles[0].advance();
     // update for vmtranslator
     while vmfiles[0].has_more_commands() {

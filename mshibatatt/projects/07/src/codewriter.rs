@@ -28,8 +28,8 @@ impl CodeWriter<'_> {
     pub fn write_arithmetic(&mut self, command: &str) {
         let mut output = String::from("");
         match command {
-            "add" => output += "// add\n@SP\nD=M\nD=M+D\nM=D\n",
-            "sub" => output += "// sub\n@SP\nD=M\nD=M-D\nM=D\n",
+            "add" => output += "// add\n@SP\nD=M\nM=M+D\n",
+            "sub" => output += "// sub\n@SP\nD=M\nM=M-D\n",
             "neg" => output += "// not\n@SP\nM=-M\n",
             "eq" => {
                 let true_label = "TRUEEQ".to_owned() + &self.counter.to_string();
@@ -73,8 +73,8 @@ impl CodeWriter<'_> {
                 output += ")\n";
                 self.counter += 1;
             },
-            "and" => output += "// and\n@SP\nD=M\nD=M&D\nM=D\n",
-            "or" => output += "// or\n@SP\nD=M\nD=M|D\nM=D\n",
+            "and" => output += "// and\n@SP\nD=M\nM=M&D\n",
+            "or" => output += "// or\n@SP\nD=M\nM=M|D\n",
             "not" => output += "// not\n@SP\nM=!M\n",
             _ => panic!("invalid arg {}!", command),
         }
@@ -89,21 +89,117 @@ impl CodeWriter<'_> {
     ) {
         let mut output = String::from("");
         match command {
-            CommandType::CPUSH => {
-                if segment == "constant" {
+            CommandType::CPUSH => match segment {
+                "constant" => {
                     output += "// push constant ";
                     output += &(index.to_string() + "\n");
                     output += "@SP\nM=";
                     output += &(index.to_string() + "\n");
-                }
+                },
+                "local" => {
+                    output += "// push local[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@LCL\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                },
+                "argument" => {
+                    output += "// push argument[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@ARG\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                },
+                "this" => {
+                    output += "// push this[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@THIS\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                },
+                "that" => {
+                    output += "// push that[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@THAT\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                },
+                "pointer" => {
+                    output += "// push pointer[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@3\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\n\nD=M\n@SP\nM=D\n";
+                },
+                "temp" => {
+                    output += "// push temp[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@5\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                },
+                "static" => {
+                    output += "// push static.";
+                    output += &(index.to_string() + "]\n@");
+                    output += self.infilename;
+                    output += ".";
+                    output += &(index.to_string() + "\nD=M\n");
+                    output += "@SP\nM=D\n";
+                },
+                _ => panic!("Unknown push segment {}!!", segment),
             },
-            CommandType::CPOP => {
-                if segment == "constant" {
-                    output += "// pop constant ";
+            CommandType::CPOP => match segment{
+                "local" => {
+                    output += "// pop local[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@LCL\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "@SP\nM=";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "argument" => {
+                    output += "// pop argument[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@ARG\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                }
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "this" => {
+                    output += "// pop this[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@THIS\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "that" => {
+                    output += "// pop that[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@THAT\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "pointer" => {
+                    output += "// pop pointer[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@3\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "temp" => {
+                    output += "// pop temp[";
+                    output += &(index.to_string() + "]\n");
+                    output += "@5\nD=A\n@";
+                    output += &(index.to_string() + "\n");
+                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                },
+                "static" => {
+                    output += "// pop static.";
+                    output += "@SP\nD=M\n";
+                    output += &(index.to_string() + "]\n@");
+                    output += self.infilename;
+                    output += ".";
+                    output += &(index.to_string() + "\nM=D\n");
+                },
+                _ => panic!("Unknown pop segment {}!!", segment),
             },
             _ => panic!("Command neither push or pop!"),
         }
