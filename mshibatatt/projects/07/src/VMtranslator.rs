@@ -1,4 +1,5 @@
 use std::env;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 mod parser; 
@@ -25,15 +26,16 @@ fn main() {
         f.read_to_string(&mut contents).expect("something went wrong reading the file");
         vmfiles.push(parser::init(&mut contents));
     } else {
-        match fs::read_dir(filename) {
-            Err(why) => println!("! {:?}", why.kind()),
-            Ok(paths) => for path in paths {
-                let mut f = File::open(path.unwrap().path()).expect("file not found");
-                let mut contents = String::new();
-                f.read_to_string(&mut contents).expect("something went wrong reading the file");
-                vmfiles.push(parser::init(&mut contents));
-            }
-        };
+        unimplemented!();
+        // match fs::read_dir(filename) {
+        //     Err(why) => println!("! {:?}", why.kind()),
+        //     Ok(paths) => for path in paths {
+        //         let mut f = File::open(path.unwrap().path()).expect("file not found");
+        //         contents = String::new();
+        //         f.read_to_string(&mut contents).expect("something went wrong reading the file");
+        //         vmfiles.push(parser::init(&mut contents));
+        //     }
+        // };
     }
     
     let mut writer = codewriter::init(&outfilename);

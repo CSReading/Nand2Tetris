@@ -28,19 +28,7 @@ impl CodeWriter<'_> {
     pub fn write_arithmetic(&mut self, command: &str) {
         let mut output = String::from("");
         match command {
-            "add" => {
-                output += "@";
-                output += &(self.sp.to_string() + "\n");
-                self.sp -= 1;
-                output += "D=M\n";
-                output += "@";
-                output += &(self.sp.to_string() + "\n");
-                self.sp -= 1;
-                output += "D=D+M\n";
-                output += "@";
-                output += &(self.sp.to_string() + "\n");
-                output += "M=D\n";
-            },
+            "add" => output += "// add\n@SP\nD=M\nD=D+M\nM=D\n",
             "sub" => unimplemented!(),
             "neg" => unimplemented!(),
             "eq" => unimplemented!(),
@@ -64,11 +52,10 @@ impl CodeWriter<'_> {
         match command {
             CommandType::CPUSH => {
                 if segment == "constant" {
-                    output += "@";
-                    output += &(self.sp.to_string() + "\n");
-                    output += "M=";
+                    output += "// push constant ";
                     output += &(index.to_string() + "\n");
-                    self.sp += 1;
+                    output += "@SP\nM=";
+                    output += &(index.to_string() + "\n");
                 }
             },
             CommandType::CPOP => unimplemented!(),
