@@ -28,19 +28,19 @@ impl CodeWriter<'_> {
     pub fn write_arithmetic(&mut self, command: &str) {
         let mut output = String::from("");
         match command {
-            "add" => output += "// add\n@SP\nD=M\nM=M+D\n",
-            "sub" => output += "// sub\n@SP\nD=M\nM=M-D\n",
-            "neg" => output += "// not\n@SP\nM=-M\n",
+            "add" => output += "// add\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D+M\n",
+            "sub" => output += "// sub\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D-M\n",
+            "neg" => output += "// not\n@SP\nM=M-1\nA=M\nM=-M\n",
             "eq" => {
                 let true_label = "TRUEEQ".to_owned() + &self.counter.to_string();
                 let false_label = "ENDEQ".to_owned() + &self.counter.to_string();
-                output += "// eq\n@SP\nD=M\nD=M-D\n@";
+                output += "// eq\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
                 output += &true_label;
-                output += "D;JEQ\n@SP\nM=0\n@";
+                output += "\nD;JEQ\n@SP\nA=M\nM=1\n@";
                 output += &false_label;
-                output += "D;JMP\n(";
+                output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nM=-1\n(";
+                output += ")\n@SP\nA=M\nM=-1\n(";
                 output += &false_label;
                 output += ")\n";
                 self.counter += 1;
@@ -48,13 +48,13 @@ impl CodeWriter<'_> {
             "gt" => {
                 let true_label = "TRUEGT".to_owned() + &self.counter.to_string();
                 let false_label = "ENDGT".to_owned() + &self.counter.to_string();
-                output += "// eq\n@SP\nD=M\nD=M-D\n@";
+                output += "// gt\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
                 output += &true_label;
-                output += "D;JGT\n@SP\nM=0\n@";
+                output += "\nD;JGT\n@SP\nA=M\nM=1\n@";
                 output += &false_label;
-                output += "D;JMP\n(";
+                output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nM=-1\n(";
+                output += ")\n@SP\nA=M\nM=-1\n(";
                 output += &false_label;
                 output += ")\n";
                 self.counter += 1;
@@ -62,20 +62,20 @@ impl CodeWriter<'_> {
             "lt" =>{
                 let true_label = "TRUELT".to_owned() + &self.counter.to_string();
                 let false_label = "ENDLT".to_owned() + &self.counter.to_string();
-                output += "// eq\n@SP\nD=M\nD=M-D\n@";
+                output += "// lt\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
                 output += &true_label;
-                output += "D;JLT\n@SP\nM=0\n@";
+                output += "\nD;JLT\n@SP\nA=M\nM=1\n@";
                 output += &false_label;
-                output += "D;JMP\n(";
+                output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nM=-1\n(";
+                output += ")\n@SP\nA=M\nM=-1\n(";
                 output += &false_label;
                 output += ")\n";
                 self.counter += 1;
             },
-            "and" => output += "// and\n@SP\nD=M\nM=M&D\n",
-            "or" => output += "// or\n@SP\nD=M\nM=M|D\n",
-            "not" => output += "// not\n@SP\nM=!M\n",
+            "and" => output += "// and\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D&M\n",
+            "or" => output += "// or\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D|M\n",
+            "not" => output += "// not\n@SP\nM=M-1\nA=M\nM=!M\n",
             _ => panic!("invalid arg {}!", command),
         }
         self.out_code += &output;
@@ -93,8 +93,9 @@ impl CodeWriter<'_> {
                 "constant" => {
                     output += "// push constant ";
                     output += &(index.to_string() + "\n");
-                    output += "@SP\nM=";
+                    output += "@";
                     output += &(index.to_string() + "\n");
+                    output += "D=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "local" => {
                     output += "// push local[";
