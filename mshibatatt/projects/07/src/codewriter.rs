@@ -100,28 +100,28 @@ impl CodeWriter<'_> {
                 "local" => {
                     output += "// push local[";
                     output += &(index.to_string() + "]\n");
-                    output += "@LCL\nD=A\n@";
+                    output += "@LCL\nD=M\n@";
                     output += &(index.to_string() + "\n");
                     output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "argument" => {
                     output += "// push argument[";
                     output += &(index.to_string() + "]\n");
-                    output += "@ARG\nD=A\n@";
+                    output += "@ARG\nD=M\n@";
                     output += &(index.to_string() + "\n");
                     output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "this" => {
                     output += "// push this[";
                     output += &(index.to_string() + "]\n");
-                    output += "@THIS\nD=A\n@";
+                    output += "@THIS\nD=M\n@";
                     output += &(index.to_string() + "\n");
                     output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "that" => {
                     output += "// push that[";
                     output += &(index.to_string() + "]\n");
-                    output += "@THAT\nD=A\n@";
+                    output += "@THAT\nD=M\n@";
                     output += &(index.to_string() + "\n");
                     output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
@@ -153,44 +153,44 @@ impl CodeWriter<'_> {
                 "local" => {
                     output += "// pop local[";
                     output += &(index.to_string() + "]\n");
-                    output += "@LCL\nD=A\n@";
+                    output += "@LCL\nD=M\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "argument" => {
                     output += "// pop argument[";
                     output += &(index.to_string() + "]\n");
-                    output += "@ARG\nD=A\n@";
+                    output += "@ARG\nD=M\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "this" => {
                     output += "// pop this[";
                     output += &(index.to_string() + "]\n");
-                    output += "@THIS\nD=A\n@";
+                    output += "@THIS\nD=M\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "that" => {
                     output += "// pop that[";
                     output += &(index.to_string() + "]\n");
-                    output += "@THAT\nD=A\n@";
+                    output += "@THAT\nD=M\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "pointer" => {
                     output += "// pop pointer[";
                     output += &(index.to_string() + "]\n");
                     output += "@3\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "temp" => {
                     output += "// pop temp[";
                     output += &(index.to_string() + "]\n");
                     output += "@5\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "D=D+A\n@R13\nM=D\n@SP\nD=M\n@R13\nA=M\nM=D\n";
+                    output += "D=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n";
                 },
                 "static" => {
                     output += "// pop static.";
