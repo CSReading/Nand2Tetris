@@ -145,7 +145,7 @@ impl CodeWriter<'_> {
                     output += self.infilename;
                     output += ".";
                     output += &(index.to_string() + "\nD=M\n");
-                    output += "@SP\nM=D\n";
+                    output += "@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 _ => panic!("Unknown push segment {}!!", segment),
             },
@@ -194,8 +194,7 @@ impl CodeWriter<'_> {
                 },
                 "static" => {
                     output += "// pop static.";
-                    output += "@SP\nD=M\n";
-                    output += &(index.to_string() + "]\n@");
+                    output += &(index.to_string() + "\n@SP\nAM=M-1\nD=M\n@");
                     output += self.infilename;
                     output += ".";
                     output += &(index.to_string() + "\nM=D\n");
