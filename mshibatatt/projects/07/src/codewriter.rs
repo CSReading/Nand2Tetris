@@ -28,54 +28,54 @@ impl CodeWriter<'_> {
     pub fn write_arithmetic(&mut self, command: &str) {
         let mut output = String::from("");
         match command {
-            "add" => output += "// add\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D+M\n",
-            "sub" => output += "// sub\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D-M\n",
-            "neg" => output += "// not\n@SP\nM=M-1\nA=M\nM=-M\n",
+            "add" => output += "// add\n@SP\nAM=M-1\nD=M\nA=A-1\nM=M+D\n",
+            "sub" => output += "// sub\n@SP\nAM=M-1\nD=M\nA=A-1\nM=M-D\n",
+            "neg" => output += "// not\n@SP\nAM=M-1\nM=-M\n@SP\nM=M+1\n",
             "eq" => {
                 let true_label = "TRUEEQ".to_owned() + &self.counter.to_string();
                 let false_label = "ENDEQ".to_owned() + &self.counter.to_string();
-                output += "// eq\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
+                output += "// eq\n@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@";
                 output += &true_label;
-                output += "\nD;JEQ\n@SP\nA=M\nM=1\n@";
+                output += "\nD;JEQ\n@SP\nAM=M-1\nM=0\n@";
                 output += &false_label;
                 output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nA=M\nM=-1\n(";
+                output += ")\n@SP\nAM=M-1\nM=-1\n(";
                 output += &false_label;
-                output += ")\n";
+                output += ")\n@SP\nM=M+1\n";
                 self.counter += 1;
             },
             "gt" => {
                 let true_label = "TRUEGT".to_owned() + &self.counter.to_string();
                 let false_label = "ENDGT".to_owned() + &self.counter.to_string();
-                output += "// gt\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
+                output += "// gt\n@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@";
                 output += &true_label;
-                output += "\nD;JGT\n@SP\nA=M\nM=1\n@";
+                output += "\nD;JGT\n@SP\nAM=M-1\nM=0\n@";
                 output += &false_label;
                 output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nA=M\nM=-1\n(";
+                output += ")\n@SP\nAM=M-1\nM=-1\n(";
                 output += &false_label;
-                output += ")\n";
+                output += ")\n@SP\nM=M+1\n";
                 self.counter += 1;
             },
             "lt" =>{
                 let true_label = "TRUELT".to_owned() + &self.counter.to_string();
                 let false_label = "ENDLT".to_owned() + &self.counter.to_string();
-                output += "// lt\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nD=D-M\n@";
+                output += "// lt\n@SP\nAM=M-1\nD=M\nA=A-1\nD=M-D\n@";
                 output += &true_label;
-                output += "\nD;JLT\n@SP\nA=M\nM=1\n@";
+                output += "\nD;JLT\n@SP\nAM=M-1\nM=0\n@";
                 output += &false_label;
                 output += "\nD;JMP\n(";
                 output += &true_label;
-                output += ")\n@SP\nA=M\nM=-1\n(";
+                output += ")\n@SP\nAM=M-1\nM=-1\n(";
                 output += &false_label;
-                output += ")\n";
+                output += ")\n@SP\nM=M+1\n";
                 self.counter += 1;
             },
-            "and" => output += "// and\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D&M\n",
-            "or" => output += "// or\n@SP\nM=M-1\nA=M\nD=M\nA=A-1\nM=D|M\n",
-            "not" => output += "// not\n@SP\nM=M-1\nA=M\nM=!M\n",
+            "and" => output += "// and\n@SP\nAM=M-1\nD=M\nA=A-1\nM=M&D\n",
+            "or" => output += "// or\n@SP\nAM=M-1\nD=M\nA=A-1\nM=M|D\n",
+            "not" => output += "// not\n@SP\nAM=M-1\nM=!M\n@SP\nM=M+1\n",
             _ => panic!("invalid arg {}!", command),
         }
         self.out_code += &output;
@@ -102,42 +102,42 @@ impl CodeWriter<'_> {
                     output += &(index.to_string() + "]\n");
                     output += "@LCL\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "argument" => {
                     output += "// push argument[";
                     output += &(index.to_string() + "]\n");
                     output += "@ARG\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "this" => {
                     output += "// push this[";
                     output += &(index.to_string() + "]\n");
                     output += "@THIS\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "that" => {
                     output += "// push that[";
                     output += &(index.to_string() + "]\n");
                     output += "@THAT\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "pointer" => {
                     output += "// push pointer[";
                     output += &(index.to_string() + "]\n");
                     output += "@3\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\n\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "temp" => {
                     output += "// push temp[";
                     output += &(index.to_string() + "]\n");
                     output += "@5\nD=A\n@";
                     output += &(index.to_string() + "\n");
-                    output += "A=D+A\nD=M\n@SP\nM=D\n";
+                    output += "A=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
                 },
                 "static" => {
                     output += "// push static.";
