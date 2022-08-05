@@ -8,36 +8,9 @@ import pathlib
 class VMtranslator:
   def __init__(self, read_path) -> None:
     self.read_path = read_path
-    # self.dir_name = self.read_path.split('/')[-2]
-
     with open(self.read_path, mode='r') as f:
       vm = f.read().splitlines()
-    # if dir_name == 'FibonacciElement':
-    #   fe_path = self.read_path.split('/')
-    #   fe_path[-1] = 'Main.vm'
-    #   with open('/'.join(fe_path), mode='r') as f_main:
-    #     vm_main = f_main.read().splitlines()
-    #   vm.extend(vm_main)
-    # if dir_name == 'StaticsTest':
-    #   st_path = self.read_path.split('/')
-    #   st_path[-1] = 'Class1.vm'
-    #   with open('/'.join(st_path), mode='r') as f_class1:
-    #     vm_class1 = f_class1.read().splitlines()
-    #   vm.extend(vm_class1)
-    #   st_path[-1] = 'Class2.vm'
-    #   with open('/'.join(st_path), mode='r') as f_class2:
-    #     vm_class2 = f_class2.read().splitlines()
-    #   vm.extend(vm_class2)
     self.vm = [deleteComments(i) for i in vm if i[0:2] != '//' and i != '']
-
-    # if dir_name in ['NestedCall', 'FibonacciElement', 'StaticsTest']:
-    #   self.write_path = '/'.join(self.read_path.split('/')[:-1]) + '/{}'.format(dir_name) + '.asm'
-    #   self.filename = dir_name
-    # else:
-    #   root, _ = os.path.splitext(self.read_path)
-    #   self.write_path = root + '.asm'
-    #   self.filename = os.path.splitext(os.path.basename(self.read_path))[0]
-
     root, _ = os.path.splitext(self.read_path)
     self.write_path = root + '.asm'
     self.filename = os.path.splitext(os.path.basename(self.read_path))[0]
@@ -51,11 +24,10 @@ class VMtranslator:
     code_writer.setFileName(self.filename)
 
     # ブートストラップコード
+    # Class1.vm, Class2.vm, Main.vmは関数の最初じゃないのでスタックポインタを初期化しない
     if self.filename not in ["Class1", "Class2", "Main"]:
       code_writer.bootStrap()
-    # if self.filename in ['NestedCall', 'FibonacciElement', 'StaticsTest']:
-    #   code_writer.writeCall("Sys.init", '0')
-
+    # Sys.vmのときはSys.initをcallしなきゃいけない
     if self.filename == "Sys":
       code_writer.writeCall("Sys.init", '0')
 
@@ -333,22 +305,22 @@ class CodeWriter:
     self.label += 1
 
   def writePushPop(self, command, segment, index):
-    segment_sybmol = ''
+    segment_symbol = ''
     if segment == 'local':
-      segment_sybmol = 'LCL'
+      segment_symbol = 'LCL'
     if segment == 'argument':
-      segment_sybmol = 'ARG'
+      segment_symbol = 'ARG'
     if segment == 'this':
-      segment_sybmol = 'THIS'
+      segment_symbol = 'THIS'
     if segment == 'that':
-      segment_sybmol = 'THAT'
+      segment_symbol = 'THAT'
 
     if command == 'push':
       if segment in ['local', 'argument', 'this', 'that']:
         asm_codes = [
           '@{}'.format(str(index)),
           'D=A',
-          '@{}'.format(segment_sybmol),
+          '@{}'.format(segment_symbol),
           'A=M+D',
           'D=M',
           '@SP',
@@ -396,7 +368,7 @@ class CodeWriter:
         asm_codes = [
           '@{}'.format(str(index)),
           'D=A',
-          '@{}'.format(segment_sybmol),
+          '@{}'.format(segment_symbol),
           'D=M+D',
           '@R13',
           'M=D',
@@ -617,6 +589,7 @@ class CodeWriter:
     self.f.write('\n')
     self.label += 1
 
+  # スタックポインタの初期化
   def bootStrap(self):
     asm_codes = [
       '@256',
@@ -646,10 +619,6 @@ if __name__ == "__main__":
     read_path_list.append(arg_path + '.vm')
   else:
     path = pathlib.Path(arg_path)
-    # for file in path.glob('**/*.vm'):
-    #   str_file = str(file)
-    #   if str_file.split('/')[-1] not in ["Main.vm", "Class1.vm", "Class2.vm"]:
-    #     read_path_list.append('./' + str(file))
     for file in path.glob('**/*.vm'):
       read_path_list.append('./' + str(file))
 
@@ -657,6 +626,7 @@ if __name__ == "__main__":
     translator = VMtranslator(read_path)
     translator.main()
 
+  # Sys.asmとMain.asmを連結してFibonacciElement.asmを作る
   with open('./FunctionCalls/FibonacciElement/Sys.asm', mode='r') as f_fe_sys:
     fe_asm = f_fe_sys.read().splitlines()
   with open('./FunctionCalls/FibonacciElement/Main.asm', mode='r') as f_fe_main:
@@ -665,6 +635,7 @@ if __name__ == "__main__":
   with open('./FunctionCalls/FibonacciElement/FibonacciElement.asm', mode='w') as f_fe:
     f_fe.write('\n'.join(fe_asm))
 
+  # Sys.asmとClass1.asmとClass2.asmを連結してStaticsTest.asmを作る
   with open('./FunctionCalls/StaticsTest/Sys.asm', mode='r') as f_st_sys:
     st_asm = f_st_sys.read().splitlines()
   with open('./FunctionCalls/StaticsTest/Class1.asm', mode='r') as f_st_c1:
@@ -676,6 +647,7 @@ if __name__ == "__main__":
   with open('./FunctionCalls/StaticsTest/StaticsTest.asm', mode='w') as f_st:
     f_st.write('\n'.join(st_asm))
 
+  # Sys.vmをNestedCall.asmにRenameする
   with open('./FunctionCalls/NestedCall/Sys.asm', mode='r') as f_nc:
     nc_asm = f_nc.read().splitlines()
   with open('./FunctionCalls/NestedCall/NestedCall.asm', mode='w') as f:
