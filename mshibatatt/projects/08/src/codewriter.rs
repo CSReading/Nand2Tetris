@@ -5,7 +5,7 @@ use::parser::CommandType;
 
 pub struct CodeWriter<'a> {
     counter: usize,
-    infilename: &'a str, 
+    infilename: String, 
     outfilename: &'a str, 
     out_code: String,
 
@@ -14,19 +14,20 @@ pub struct CodeWriter<'a> {
 pub fn init(outfilename: &str) -> CodeWriter {    
     CodeWriter {
         counter: 0,
-        infilename: "",
+        infilename: String::from(""),
         outfilename: outfilename,
         out_code: String::from(""),
     }
 }
 
-impl CodeWriter<'_> {
-    pub fn set_file_name(&mut self, file_name: &'static str) {
+impl<'a>  CodeWriter<'a> {
+    pub fn set_file_name(&mut self, file_name: String) {
         self.infilename = file_name;
     }
 
     pub fn write_init(&mut self) {
-        unimplemented!()
+        self.out_code += "@256\nD=A\n@SP\nM=D\n";
+        self.write_call("Sys.init", 0);
     }
 
     pub fn write_arithmetic(&mut self, command: &str) {
@@ -146,7 +147,7 @@ impl CodeWriter<'_> {
                 "static" => {
                     output += "// push static.";
                     output += &(index.to_string() + "]\n@");
-                    output += self.infilename;
+                    output += &self.infilename;
                     output += ".";
                     output += &(index.to_string() + "\nD=M\n");
                     output += "@SP\nA=M\nM=D\n@SP\nM=M+1\n";
@@ -199,7 +200,7 @@ impl CodeWriter<'_> {
                 "static" => {
                     output += "// pop static.";
                     output += &(index.to_string() + "\n@SP\nAM=M-1\nD=M\n@");
-                    output += self.infilename;
+                    output += &self.infilename;
                     output += ".";
                     output += &(index.to_string() + "\nM=D\n");
                 },
@@ -235,15 +236,53 @@ impl CodeWriter<'_> {
     }
     
     pub fn write_call(&mut self, function_name: &str, num_args: usize) {
-        unimplemented!()
+        let mut output = String::from("");
+        output += "// call ";
+        output += function_name;
+        output += "\n@return-address-"; 
+        output += &(self.counter.to_string() + "\n");
+        output += "D=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"; // push return-address
+        output += "@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"; // push LCL
+        output += "@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"; // push ARG
+        output += "@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"; // push THIS
+        output += "@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"; // push THAT
+        output += "@SP\nD=M\n@";
+        output += &((num_args + 5).to_string() + "\nD=D-A\n@ARG\nM=D\n"); // ARG = SP-n-5
+        output += "@SP\nD=M\n@LCL\nM=D\n"; // LCL = SP 
+        output += "@";
+        output += function_name;
+        output += "\nD;JMP\n"; // goto f
+        output += "(return-address-"; 
+        output += &(self.counter.to_string() + ")\n");
+        self.counter += 1;
+        self.out_code += &output;
     }
 
     pub fn write_return(&mut self) {
-        unimplemented!()
+        let mut output = String::from("");
+        output += "// return\n";
+        output += "@LCL\nD=M\n@R13\nM=D\n"; // R13 = LCL
+        output += "@5\nA=D-A\nD=M\n@R14\nM=D\n"; // R14 = return-address
+        output += "@ARG\nD=M\n@R15\nM=D\n@SP\nA=M-1\nD=M\n@R15\nA=M\nM=D\n"; // *ARG = pop()
+        output += "@ARG\nD=M\n@SP\nM=D+1\n"; // SP = ARG+1
+        output += "@R13\nAM=M-1\nD=M\n@THAT\nM=D\n"; // R13--; THAT = *R13;
+        output += "@R13\nAM=M-1\nD=M\n@THIS\nM=D\n"; // R13--; THIS = *R13;
+        output += "@R13\nAM=M-1\nD=M\n@ARG\nM=D\n"; // R13--; ARG = *R13;
+        output += "@R13\nAM=M-1\nD=M\n@LCL\nM=D\n"; // R13--; LCL = *R13;
+        output += "@R14\nA=M\nD;JMP\n"; // goto return address
+        self.out_code += &output;
     }
 
     pub fn write_function(&mut self, function_name: &str, num_args: usize) {
-        unimplemented!()
+        let mut output = String::from("");
+        let push_0 = "@0\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+        output += "// define function\n(";
+        output += function_name;
+        output += ")\n";
+        for _ in 0..num_args {
+            output += push_0;
+        }
+        self.out_code += &output;
     }
 
     pub fn close(&self) {

@@ -12,25 +12,26 @@ pub enum CommandType {
     CCALL,
 }
 
-pub fn init(contents: &mut String) -> Parser{
-    let vec: Vec<&str> = contents.split('\n').collect::<Vec<&str>>().iter().map(|s| s.trim()).collect();
+pub fn init(contents: String) -> Parser {
+
+    let vec: Vec<String> = contents.split('\n').map(|s| s.trim().to_string()).collect();
     let size: usize = vec.len(); 
     Parser {
-        vec: vec.clone(),
-        current_command: "",
+        vec: vec,
+        current_command: String::from(""),
         next_line: 0,
         contents_size: size,
     }
 }
 
-pub struct Parser<'a> {
-    vec: Vec<&'a str>,
-    current_command: &'a str,
+pub struct Parser {
+    vec: Vec<String>,
+    current_command: String,
     pub next_line: usize,
     contents_size: usize,
 }
 
-impl Parser<'_> {
+impl Parser {
     pub fn has_more_commands(&self) -> bool {
         if self.next_line >= self.contents_size {
             false
@@ -44,13 +45,13 @@ impl Parser<'_> {
             return;
         }
 
-        self.current_command = self.vec[self.next_line];
+        self.current_command = self.vec[self.next_line].to_owned();
         self.next_line += 1;
 
         let comment = self.current_command.find("//");
         self.current_command = match comment {
-            None => self.current_command,
-            _ => &self.current_command[..comment.unwrap()].trim()
+            None => self.current_command.to_owned(),
+            _ => self.current_command[..comment.unwrap()].trim().to_owned()
         };
 
         if self.current_command == "" {
@@ -59,8 +60,7 @@ impl Parser<'_> {
     }
 
     pub fn command_type(&self) -> CommandType {
-        match self.current_command.to_owned()
-            .split(" ").collect::<Vec<&str>>()[0] {
+        match self.current_command.split(" ").collect::<Vec<&str>>()[0] {
             "add" | "sub" | "neg" | "eq" | "gt" | 
                 "lt" | "and" | "or" | "not" => CommandType::CARITHMETIC,
             "push" => CommandType::CPUSH,
