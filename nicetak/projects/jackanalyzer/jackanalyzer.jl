@@ -3,6 +3,8 @@
 # export analyze
 
 include("tokenize.jl")
+include("compile.jl")
+
 
 function analyze(pathname::String; export_token = false)
 
@@ -46,9 +48,10 @@ function file_to_jack(filename::String; export_token = false)
     
     # Tokenize
     tokenize!(jack)
-
+    parse!(jack)
 
     # Export 
+    ## Tokenizer
     if export_token
 
         open("$dirname$(basename)T.xml", "w") do f
@@ -57,6 +60,13 @@ function file_to_jack(filename::String; export_token = false)
 
         println("$basename.jack is tokenized.")
     end
+
+    ## Parser
+    open("$dirname$(basename).xml", "w") do f
+        write(f, jack.xml)
+    end
+
+    println("$basename.jack is parsed.")
 
 end
 

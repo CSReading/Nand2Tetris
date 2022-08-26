@@ -7,17 +7,17 @@ struct Token
 
 end
 
-@with_kw struct Jack
+@with_kw mutable struct Jack
 
     filename::String
     lines::Vector{String} = Vector{String}()
+
+    # Tokenizer
     tokens::Vector{Token} = Vector{Token}()
     str_tokens::Vector{String} = Vector{String}()
     
     # Parser
-    idx_current::Int64 = 1
-    token_current::Token = nothing
-    str_compileds::Vector{String} = Vector{String}()
+    xml::String = ""
 
 end
 
@@ -83,10 +83,18 @@ end
 
 function tokenize(word, symbols = symbols, keywords = keywords)
 
+    d = Dict("<" => "&lt;", ">" => "&gt;", "&" => "&amp;")
+
     if word ∈ keywords
         return Token("keyword", word)
     elseif word ∈ symbols
-        return Token("symbol", word)
+
+        if haskey(d, word)
+            return Token("symbol", d[word])
+        else
+            return Token("symbol", word)
+        end
+
     elseif word[begin] == '"'
         return Token("stringConstant", word[begin+1:end-1])
     elseif word[begin] ∈ ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -97,14 +105,5 @@ function tokenize(word, symbols = symbols, keywords = keywords)
 
 end
 
-function token_to_str(token::Token)
+token_to_str(token::Token) = "<$(token.type)> $(token.s) </$(token.type)>"
 
-    d = Dict("<" => "&lt;", ">" => "&gt;", "&" => "&amp;")
-
-    if token.type == "symbol" && haskey(d, token.s)
-        return "<$(token.type)> $(d[token.s]) </$(token.type)>"
-    else
-        return "<$(token.type)> $(token.s) </$(token.type)>"
-    end
-
-end
