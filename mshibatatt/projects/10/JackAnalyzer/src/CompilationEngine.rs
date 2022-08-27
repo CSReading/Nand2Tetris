@@ -5,7 +5,6 @@ pub struct CompilationEngine {
     infile: JackTokenizer,
     pub xml: String,
     indent_num: usize,
-    counter: usize,
 }
 
 impl CompilationEngine {
@@ -14,7 +13,6 @@ impl CompilationEngine {
             infile: infile,
             xml: String::from(""),
             indent_num: 0,
-            counter: 0,
         }
     }
 
@@ -34,8 +32,6 @@ impl CompilationEngine {
     }
 
     fn parse(&mut self) {
-        self.counter += 1;
-        
         self.indent();
         match self.infile.token_type() {
             TokenType::KEYWORD => {
