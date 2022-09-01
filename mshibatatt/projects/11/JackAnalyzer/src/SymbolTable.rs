@@ -51,7 +51,7 @@ impl SymbolTable {
         let count = self.var_count(&kind);
         
         match kind {
-            Kind::STATIC | Kind::FIELD => {
+            Kind::STATIC => {
                 self.class_table.type_map.insert(name.to_owned(), type_.to_owned());
                 self.class_table.kind_map.insert(name.to_owned(), kind);
                 self.class_table.index_map.insert(name.to_owned(), count);

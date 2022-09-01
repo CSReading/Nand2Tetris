@@ -66,6 +66,8 @@ impl CompilationEngine {
     }
     
     fn compile_class_var_dec(&mut self) {
+        let mut first_loop = true;
+        let mut type_ = String::new();
         assert!(self.infile.token_type() == TokenType::KEYWORD);
         let kind_string = self.infile.key_word().to_owned();
         self.infile.advance();
@@ -89,12 +91,16 @@ impl CompilationEngine {
                         "field" => Kind::FIELD,
                         _ => unreachable!(),
                     };
+                    if first_loop {
+                        type_ = self.infile.token.to_owned();
+                        self.infile.advance();
+                        first_loop = false;
+                    }
 
-                    let type_ = self.infile.token.to_owned();
-                    self.infile.advance();
                     assert!(self.infile.token_type() == TokenType::IDENTIFIER);
                     let var_name = self.infile.identifier();
                     self.symbol_table.define(var_name, &type_, kind);
+                    self.infile.advance();
                 }
             }
         }
@@ -102,16 +108,17 @@ impl CompilationEngine {
     
     fn compile_subroutine(&mut self) {
         self.symbol_table.start_subroutine();
+        let mut is_method = false;
 
         // "constructor", "function", or "method" 
         assert!(self.infile.token_type() == TokenType::KEYWORD);
         if self.infile.key_word() == "method" {
+            is_method = true;
             self.symbol_table.define("this", &self.class_name, Kind::ARG);
         }
         self.infile.advance();
 
         // "void" or type
-        assert!(self.infile.token_type() == TokenType::KEYWORD);
         self.infile.advance();
 
         assert!(self.infile.token_type() == TokenType::IDENTIFIER);
@@ -144,10 +151,11 @@ impl CompilationEngine {
             }
         }
         self.writer.write_function(&subroutine_name, self.var_counter);
-        // set Argument 0 as Pointer 0 NO Need?
-        // self.writer.write_push(Segment::ARG, 0);
-        // self.writer.write_pop(Segment::POINTER, 0);
-
+        // set Argument 0 as Pointer 0 in case method
+        if is_method {
+            self.writer.write_push(Segment::ARG, 0);
+            self.writer.write_pop(Segment::POINTER, 0);
+        }
         self.compile_statements();
         
         assert_eq!(self.infile.symbol(), '}');
@@ -227,6 +235,8 @@ impl CompilationEngine {
     }
     
     fn compile_let(&mut self) {
+        let mut is_array = false;
+
         assert_eq!(self.infile.token.as_str(), "let");
         self.infile.advance();
 
@@ -237,10 +247,25 @@ impl CompilationEngine {
 
         assert!(self.infile.token_type() == TokenType::SYMBOL);
         if self.infile.symbol() == '[' {
+            is_array = true;
             self.infile.advance();
+
+            let array_base = *self.symbol_table.index_of(&var_name).unwrap();
+            match *self.symbol_table.kind_of(&var_name).unwrap() {
+                Kind::STATIC => self.writer.write_push(Segment::STATIC, array_base),
+                Kind::FIELD => self.writer.write_push(Segment::THIS, array_base),
+                Kind::ARG => self.writer.write_push(Segment::ARG, array_base),
+                Kind::VAR => self.writer.write_push(Segment::LOCAL, array_base),
+            }
+
             self.compile_expression();
-            assert_eq!(self.infile.symbol(), ']');
-            self.infile.advance();
+            assert_eq!(self.infile.token.as_str(), "]");  
+            self.infile.advance();     
+            // to find pointer of a[k]
+            self.writer.write_arithmetic(Command::ADD);
+            // use that segment and set address at "that 0"
+            self.writer.write_pop(Segment::POINTER, 1);
+            self.writer.write_push(Segment::THAT, 0);
         } 
 
         assert_eq!(self.infile.symbol(), '=');
@@ -248,15 +273,20 @@ impl CompilationEngine {
         self.compile_expression();
 
         // assignment
-        let kind = self.symbol_table.kind_of(&var_name).unwrap();
-        let index = self.symbol_table.index_of(&var_name).unwrap();
-        match *kind {
-            Kind::STATIC => self.writer.write_pop(Segment::STATIC, *index),
-            Kind::FIELD => self.writer.write_pop(Segment::THIS, *index),
-            Kind::ARG => self.writer.write_pop(Segment::ARG, *index),
-            Kind::VAR => self.writer.write_pop(Segment::LOCAL, *index),
+        if is_array {
+            // assign in the address
+            self.writer.write_pop(Segment::THAT, 0);
+        } else {
+            let kind = self.symbol_table.kind_of(&var_name).unwrap();
+            let index = self.symbol_table.index_of(&var_name).unwrap();
+            match *kind {
+                Kind::STATIC => self.writer.write_pop(Segment::STATIC, *index),
+                Kind::FIELD => self.writer.write_pop(Segment::THIS, *index),
+                Kind::ARG => self.writer.write_pop(Segment::ARG, *index),
+                Kind::VAR => self.writer.write_pop(Segment::LOCAL, *index),
+            }
         }
-
+        
         assert_eq!(self.infile.symbol(), ';');
         self.infile.advance();
     }
@@ -369,7 +399,7 @@ impl CompilationEngine {
     fn compile_subroutine_call(&mut self) {
 
         assert!(self.infile.token_type() == TokenType::IDENTIFIER);
-        let mut name_1 = self.infile.identifier().to_owned();
+        let name_1 = self.infile.identifier().to_owned();
         self.infile.advance();
 
         // parse "(" or "."
@@ -381,15 +411,35 @@ impl CompilationEngine {
             self.writer.write_call(&name_1, self.arg_counter);
         } else {
             assert_eq!(self.infile.symbol(), '.');
+            // check if name_1 is class name or object name
+            let mut name_2 = match self.symbol_table.type_of(&name_1) {
+                None => {
+                    self.arg_counter = 0;
+                    name_1.to_owned()
+                }
+                Some(t) => {
+                    self.arg_counter = 1;
+                    t.to_owned()
+                }
+            };
             self.infile.advance();
-            name_1 += ".";
-            name_1 += &self.infile.identifier();
+            name_2 += ".";
+            name_2 += &self.infile.identifier();
             self.infile.advance();
             assert_eq!(self.infile.symbol(), '(');
             self.infile.advance();
-            self.arg_counter = 0;
+            // push object if name_1 on calling method
+            if self.arg_counter == 1 {
+                match *self.symbol_table.kind_of(&name_1).unwrap() {
+                    Kind::STATIC => self.writer.write_push(Segment::STATIC, *self.symbol_table.index_of(&name_1).unwrap()),
+                    Kind::FIELD => self.writer.write_push(Segment::THIS, *self.symbol_table.index_of(&name_1).unwrap()),
+                    Kind::ARG => self.writer.write_push(Segment::ARG, *self.symbol_table.index_of(&name_1).unwrap()),
+                    Kind::VAR => self.writer.write_push(Segment::LOCAL, *self.symbol_table.index_of(&name_1).unwrap()),
+                }
+                
+            }
             self.compile_expression_list();
-            self.writer.write_call(&name_1, self.arg_counter);
+            self.writer.write_call(&name_2, self.arg_counter);
         }
 
         assert_eq!(self.infile.symbol(), ')');
@@ -494,17 +544,29 @@ impl CompilationEngine {
                             self.compile_subroutine_call();
                         },
                         '[' => {
-                            // TODO; in case array 
+                            // in case array 
                             self.infile.idx = current_idx;
                             self.infile.next_idx = current_next_idx;
                             self.infile.token = self.infile.file[self.infile.idx..self.infile.next_idx].to_owned();
                             // parse varName
+                            let array_base = *self.symbol_table.index_of(&self.infile.identifier()).unwrap();
+                            match *self.symbol_table.kind_of(&self.infile.identifier()).unwrap() {
+                                Kind::STATIC => self.writer.write_push(Segment::STATIC, array_base),
+                                Kind::FIELD => self.writer.write_push(Segment::THIS, array_base),
+                                Kind::ARG => self.writer.write_push(Segment::ARG, array_base),
+                                Kind::VAR => self.writer.write_push(Segment::LOCAL, array_base),
+                            }
                             self.infile.advance();
                             assert_eq!(self.infile.token.as_str(), "[");
                             self.infile.advance();
                             self.compile_expression();
                             assert_eq!(self.infile.token.as_str(), "]");  
-                            self.infile.advance();                           
+                            self.infile.advance();     
+                            // to push a[k]
+                            self.writer.write_arithmetic(Command::ADD);
+                            // use that segment push the number of memory address
+                            self.writer.write_pop(Segment::POINTER, 1);
+                            self.writer.write_push(Segment::THAT, 0);
                         }
                         _ => {
                             // in case single varName
@@ -533,7 +595,15 @@ impl CompilationEngine {
                 self.writer.write_push(Segment::CONST, self.infile.int_val());
                 self.infile.advance();
             },
-            TokenType::STRINGCONST => unimplemented!(),
+            TokenType::STRINGCONST => {
+                self.writer.write_push(Segment::CONST, self.infile.string_val().len()); 
+                self.writer.write_call("String.new", 1);
+                for i in self.infile.string_val().as_bytes() {
+                    self.writer.write_push(Segment::CONST, *i as usize);
+                    self.writer.write_call("String.appendChar", 2);
+                }
+                self.infile.advance();
+            },
             TokenType::KEYWORD => {
                 match self.infile.key_word() {
                     "true" => {
@@ -544,13 +614,10 @@ impl CompilationEngine {
                         self.writer.write_push(Segment::CONST, 0);
                     },
                     "this" => {
-                        unimplemented!();
+                        self.writer.write_push(Segment::THIS, 0);
                     },
                     _ => unreachable!(),
                 }
-                self.infile.advance();
-            },
-            _ => {
                 self.infile.advance();
             },
         }
