@@ -15,6 +15,7 @@ pub struct CompilationEngine {
     label_counter: usize,
     arg_counter: usize,
     var_counter: usize,
+    field_counter: usize,
 }
 
 impl CompilationEngine {
@@ -28,6 +29,7 @@ impl CompilationEngine {
             label_counter: 0,
             arg_counter: 0,
             var_counter: 0,
+            field_counter: 0,
         }
     }
 
@@ -45,7 +47,7 @@ impl CompilationEngine {
         assert_eq!(self.infile.symbol(), '{');
         self.infile.advance(); 
 
-
+        self.field_counter = 0;
         loop {
             match self.infile.token_type() {
                 TokenType::KEYWORD => {
@@ -88,7 +90,10 @@ impl CompilationEngine {
                     // define variables
                     let kind = match kind_string.as_str() {
                         "static" => Kind::STATIC,
-                        "field" => Kind::FIELD,
+                        "field" => {
+                            self.field_counter += 1;
+                            Kind::FIELD
+                        },
                         _ => unreachable!(),
                     };
                     if first_loop {
@@ -109,12 +114,16 @@ impl CompilationEngine {
     fn compile_subroutine(&mut self) {
         self.symbol_table.start_subroutine();
         let mut is_method = false;
+        let mut is_constructor = false;
 
         // "constructor", "function", or "method" 
         assert!(self.infile.token_type() == TokenType::KEYWORD);
         if self.infile.key_word() == "method" {
             is_method = true;
             self.symbol_table.define("this", &self.class_name, Kind::ARG);
+        }
+        if self.infile.key_word() == "constructor" {
+            is_constructor = true;
         }
         self.infile.advance();
 
@@ -151,6 +160,13 @@ impl CompilationEngine {
             }
         }
         self.writer.write_function(&subroutine_name, self.var_counter);
+        // Memory allocate if object
+        if is_constructor {
+            self.writer.write_push(Segment::CONST, self.field_counter);
+            self.writer.write_call("Memory.alloc", 1);
+            self.writer.write_pop(Segment::POINTER, 0);
+        }
+        
         // set Argument 0 as Pointer 0 in case method
         if is_method {
             self.writer.write_push(Segment::ARG, 0);
@@ -399,16 +415,22 @@ impl CompilationEngine {
     fn compile_subroutine_call(&mut self) {
 
         assert!(self.infile.token_type() == TokenType::IDENTIFIER);
-        let name_1 = self.infile.identifier().to_owned();
+        let mut name_1 = self.infile.identifier().to_owned();
         self.infile.advance();
 
         // parse "(" or "."
         assert!(self.infile.token_type() == TokenType::SYMBOL);
         if self.infile.symbol() == '(' {
+            // if no varname, then call from same class
+            let mut name_2 = self.class_name.to_owned();
+            name_2 += ".";
+            name_2 += &name_1;
+            self.writer.write_push(Segment::POINTER, 0);
+
             self.infile.advance();
-            self.arg_counter = 0;
+            self.arg_counter = 1;
             self.compile_expression_list();
-            self.writer.write_call(&name_1, self.arg_counter);
+            self.writer.write_call(&name_2, self.arg_counter);
         } else {
             assert_eq!(self.infile.symbol(), '.');
             // check if name_1 is class name or object name
@@ -614,7 +636,7 @@ impl CompilationEngine {
                         self.writer.write_push(Segment::CONST, 0);
                     },
                     "this" => {
-                        self.writer.write_push(Segment::THIS, 0);
+                        self.writer.write_push(Segment::POINTER, 0);
                     },
                     _ => unreachable!(),
                 }
