@@ -280,8 +280,6 @@ impl CompilationEngine {
             // to find pointer of a[k]
             self.writer.write_arithmetic(Command::ADD);
             // use that segment and set address at "that 0"
-            self.writer.write_pop(Segment::POINTER, 1);
-            self.writer.write_push(Segment::THAT, 0);
         } 
 
         assert_eq!(self.infile.symbol(), '=');
@@ -291,6 +289,9 @@ impl CompilationEngine {
         // assignment
         if is_array {
             // assign in the address
+            self.writer.write_pop(Segment::TEMP, 0);
+            self.writer.write_pop(Segment::POINTER, 1);
+            self.writer.write_push(Segment::TEMP, 0);
             self.writer.write_pop(Segment::THAT, 0);
         } else {
             let kind = self.symbol_table.kind_of(&var_name).unwrap();

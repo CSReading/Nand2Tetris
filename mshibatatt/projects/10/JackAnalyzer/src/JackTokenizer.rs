@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::cmp::min;
 
 #[derive(PartialEq)]
 pub enum TokenType {
