@@ -10,6 +10,7 @@ class Keyboard {
 
     /** Initializes the keyboard. */
     function void init() {
+        return;
     } 
 
     /**
@@ -33,6 +34,8 @@ class Keyboard {
      * F1 - F12 = 141 - 152
      */
     function char keyPressed() {
+        // memory[24576] is 0 if keys are not pressed
+        return Memory.peek(24576);
     }
 
     /**								
@@ -41,6 +44,17 @@ class Keyboard {
      * of the pressed key.
      */
     function char readChar() {
+        var char c;
+        // show cursor
+        let c = Keyboard.keyPressed();
+        while (c = 0) {
+            let c = Keyboard.keyPressed();
+        }
+        while (c = Keyboard.keyPressed()) {
+            // keep wait
+        }
+        do Output.printChar(c);
+        return c;
     }
 
     /**								
@@ -49,6 +63,25 @@ class Keyboard {
      * and returns its value. Also handles user backspaces.
      */
     function String readLine(String message) {
+        var String s;
+        var char c;
+
+        do Output.printString(message);
+        let s = String.new(64); 
+        while (true) {
+            let c = Keyboard.readChar();
+            if (c = 128) {
+                do Output.println();
+                return s;
+            } else {
+                if (c = 129) {
+                    do s.eraseLastChar();
+                } else {
+                    do s.appendChar(c);
+                }
+            }
+        }
+        return s;
     }   
 
     /**								
@@ -58,5 +91,39 @@ class Keyboard {
      * entered text is detected). Also handles user backspaces. 
      */
     function int readInt(String message) {
+        var int i;
+        var char c;
+        var boolean is_negative;
+
+        do Output.printString(message);
+        let i = 0;
+        let is_negative = false;
+        while (true) {
+            let c = Keyboard.readChar();
+            if (c = 129) {
+                if ((i = 0) & is_negative) {
+                    let is_negative = false;
+                }
+                let i = i / 10;
+            } else {
+                if (c = 45) {
+                    if (i = 0) {
+                        let is_negative = true;
+                    }
+                } else {
+                    if ((c < 48) | (c > 57)) {
+                        do Output.println();
+                        return i;
+                    } else {
+                        if (is_negative) {
+                            let i = (i*10) - (c-48);
+                        } else {
+                            let i = (i*10) + (c-48);
+                        }
+                    }
+                }
+            }
+        }
+        return i;
     }
 }
