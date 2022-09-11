@@ -153,9 +153,9 @@ impl JackTokenizer {
         &self.token
     }
 
-    pub fn int_val(&self) -> u32 {
+    pub fn int_val(&self) -> usize {
         // assert_eq!(self.token_type(), TokenType::INTCONST);
-        self.token.parse::<u32>().unwrap()
+        self.token.parse::<usize>().unwrap()
     }
 
     pub fn string_val(&self) -> &str {
