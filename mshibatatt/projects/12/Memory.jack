@@ -9,26 +9,71 @@
  * consists of 32,768 words, each holding a 16-bit binary number.
  */ 
 class Memory {
+    static Array memory, freeList;
 
     /** Initializes the class. */
     function void init() {
+        let freeList = 2048; // start of heap memory
+        let freeList[0] = 14335; // set length as 16383 - 2048
+        let freeList[1] = null; // set next pointer
+        let memory = 0;
+        return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
+        return memory[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
+        let memory[address] = value;
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
+        var int block, segment, length, next;
+
+        // first-fit
+        let segment = freeList;
+        let length = freeList[0];
+        let next = freeList[1];
+        while (~(length > size) & ~(next = 0)) {
+             let segment = next;
+             let length = segment[0];
+             let next = segment[1];
+        }
+        // set block
+        // segment.length -> segment.next -> block.length -> block.start 
+        let block = segment + 3;
+        
+        // update freeList
+        let segment[0] = 0;
+        let segment[1] = block + size;
+        let segment[block + size] = length - size - 1;
+        let segment[block + size + 1] = next;
+        
+        // set size of block
+        let block[-1] = size + 1;
+        return block;
     }
 
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
     function void deAlloc(Array o) {
+        var int segment, length, next;
+        let segment = o - 1;
+        let length = o[-1];
+        
+        // get back to freeList
+        let next = freeList[1];
+        while (segment > next) {
+            let next = next[1];
+        }
+        let next[-1] = next[-1] + length;
+
+        return;
     }    
 }
