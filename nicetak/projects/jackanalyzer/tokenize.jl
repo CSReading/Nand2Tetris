@@ -19,6 +19,9 @@ end
     # Parser
     xml::String = ""
 
+    # VM Code
+    code::String = ""
+
 end
 
 
