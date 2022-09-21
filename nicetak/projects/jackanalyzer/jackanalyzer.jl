@@ -6,11 +6,11 @@ include("tokenize.jl")
 include("compile.jl")
 
 
-function analyze(pathname::String; export_token = false)
+function analyze(pathname::String; export_token = false, export_parsed = false)
 
     if occursin(".jack", pathname)
 
-        file_to_jack(pathname, export_token = export_token)
+        file_to_jack(pathname, export_token = export_token, export_parsed = export_parsed)
     
     else
         
@@ -18,7 +18,7 @@ function analyze(pathname::String; export_token = false)
 
         for file ∈ jackfiles
 
-            file_to_jack("$pathname/$file", export_token = export_token)
+            file_to_jack("$pathname/$file", export_token = export_token, export_parsed = export_parsed)
 
         end
 
@@ -27,7 +27,7 @@ function analyze(pathname::String; export_token = false)
 end
 
 
-function file_to_jack(filename::String; export_token = false)
+function file_to_jack(filename::String; export_token = false, export_parsed = false)
 
     basename = split(split(filename, ".jack")[begin], "/")[end]
     dirname = split(filename, "$basename.jack")[begin]
@@ -46,7 +46,7 @@ function file_to_jack(filename::String; export_token = false)
 
     end
     
-    # Tokenize
+    # Tokenize, parse, and compile
     tokenize!(jack)
     parse!(jack)
 
@@ -62,11 +62,22 @@ function file_to_jack(filename::String; export_token = false)
     end
 
     ## Parser
-    open("$dirname$(basename).xml", "w") do f
-        write(f, jack.xml)
+    if export_parsed
+
+        open("$dirname$(basename).xml", "w") do f
+            write(f, jack.xml)
+        end
+
+        println("$basename.jack is parsed.")
+
     end
 
-    println("$basename.jack is parsed.")
+    ## Compiler
+    open("$dirname$(basename).vm", "w") do f
+        write(f, jack.code)
+    end
+
+    println("$basename.jack is compiled.")
 
 end
 

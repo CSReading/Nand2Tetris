@@ -1,0 +1,13 @@
+function Main.main 1
+pop var 0
+push game
+call SquareGame.run 1
+pop temp 0
+push game
+call SquareGame.dispose 1
+pop temp 0
+push constant 0
+return
+function Main.more 1
+push constant 0
+return
